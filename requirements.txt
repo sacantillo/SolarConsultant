@@ -3,3 +3,7 @@ pandas
 plotly
 streamlit
 scipy
+folium
+streamlit_folium
+datetime
+geopy
