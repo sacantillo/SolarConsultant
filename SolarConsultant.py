@@ -26,7 +26,7 @@ def carga_inversores():
     return inversores
 
 def geocode_address(address):
-    gmaps = googlemaps.Client(key='AIzaSyCjVcWDA9GiTKTahvqItt6SiUrUdCHAuKM')
+    gmaps = googlemaps.Client(key='')
     location = gmaps.geocode(address)
     if location:
         return location[0]['geometry']['location']['lat'], location[0]['geometry']['location']['lng']
