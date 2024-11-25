@@ -97,9 +97,9 @@ def app():
          with c2:
             st_folium(st.session_state.map, width=800, height=400)
          with c1:
-            st.metric("HSP (max):", round(max,2))
-            st.metric("HSP:", round(med,2))
-            st.metric("HSP (min):", round(min,2))
+            st.metric("HSP (max):", round(max,1))
+            st.metric("HSP:", round(med,1))
+            st.metric("HSP (min):", round(min,1))
 
     consumo = st.sidebar.text_input("Consumo (kWh)",key='consumo_input')
 
