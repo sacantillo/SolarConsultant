@@ -1,5 +1,5 @@
 import streamlit as st
-import folium
+import folium, math
 from streamlit_folium import st_folium
 from geopy.geocoders import Nominatim
 import datetime
@@ -14,6 +14,15 @@ def carga_paneles():
                               "Ancho":0.03, "Degradacion":0.004,"Peso":32.5 },
     }
     return paneles
+
+def carga_inversores():
+    inversores = {
+        "S5-GC60K-LV": {"VmaxMPP":1000, "VminMPP": 180, "Vnom":450, "PmaxWp":60,
+                        "Pmax_kWp":60, "Vstart": 195, "NinMPPT":450, "Peso":89,
+                        "ImaxMPPT": 256, "ImaxCC":320, "Poutmax":60000, "FPot":0.99,
+                        "Freq":60, "Inomout": 157.5, "Ioutmax":157.5, "VnomAC":220}
+    }
+    return inversores
 
 def geocode_address(address):
     geolocator = Nominatim(user_agent="my_app")
@@ -32,7 +41,7 @@ def HSP(lat, lon):
         lon = float(lon)
 
         gpoint = point(lon, lat, "EPSG:4326")
-        start = datetime.date(2022, 1, 1)
+        start = datetime.date(2023, 1, 1)
         end = datetime.date(2023, 12, 31)
         data = query_power(gpoint, start, end, True, "", "re", [], "daily", "point", "csv")
         data_MO = data[['ALLSKY_SFC_SW_DWN', 'MO']].groupby("MO")
@@ -111,7 +120,8 @@ def app():
         st.metric("Consumo diario (kWh):", round(cons_prom,2))
     else:
       cons_prom = 0
-    inyeccion = st.sidebar.slider('% Inyección a la red', 0, 100, 100)/100
+    inyeccion = st.sidebar.slider('Inyección a la red (%)', 0, 100, 100)/100
+    consumoHSP = st.sidebar.slider('Consumo en HSP (%)', 0, 100, 100)/100
 
     opciones = {"Mínimo": min, "Medio": med, "Máximo": max}
     # Selectbox con los nombres visibles
@@ -121,14 +131,35 @@ def app():
       c3, c4 = st.columns([1,3])
       if escenario != 0:
         pot_pico = cons_prom*inyeccion/escenario
-        c3.metric("Potencia pico a instalar (kWp):", round(cons_prom*inyeccion/round(escenario,2),1))
+        c3.metric("Potencia pico a instalar (kWp):", round(cons_prom*consumoHSP*inyeccion/round(escenario,2),1))
         paneles = carga_paneles()
         panel_selec = c4.selectbox("Seleccione un panel", list(paneles.keys()))
         valores = paneles[panel_selec]
         c5, c6, c7= st.columns(3)
         paneles_f1 = 1000*pot_pico/valores['Pmax']
         c5.metric("Paneles a instalar:", round(1000*round(cons_prom*inyeccion/round(escenario,2),1)/valores['Pmax'],1))
-        #c6.metric("Generación Mensual (MWh):",round(valores['Pmax']*escenario*paneles_f1*24*30/1e6,1))
+        gen_mensual = round(valores['Pmax']*escenario*paneles_f1*30/1e6,1)
+        c6.metric("Generación Mensual (MWh):",gen_mensual, str(round(-0.367*gen_mensual,2))+" Ton CO2/MWh",delta_color="inverse")
+        c7.metric("Consumo Perfil de Carga (kWh):",round(cons_prom*consumoHSP,1))
+
+    with st.container(border=True):
+        st.markdown('<h3 style="font-size: 16px;">Área disponible (m<sup style=font-size:.8em;>2 </sup>) :</h3>', unsafe_allow_html=True)
+        cc, cd = st.columns([3, 1])
+        with cc:
+            area = st.text_input("",label_visibility="collapsed")
+        with cd:
+            calc_PSFV = st.button("Calcular", use_container_width=True)
+
+        if calc_PSFV:
+            c8, c9, c10, c11 = st.columns(4)
+            cant_pan_teo = float(area)/valores['Area']
+            c8.metric("Cantidad Teórica de Paneles:", round(cant_pan_teo,2))
+            area_capt = cant_pan_teo*valores['Area']
+            c9.metric("Área de Captación ($m^{2})$:", round(area_capt,1))
+            inclinacion = round(3.7 + (0.69 * st.session_state.lat + 4),0)
+            c10.metric("Inclinación Optima (°):",inclinacion)
+            dist_pan = 0.21/(math.atan(61 - st.session_state.lat))
+            c11.metric("Distancia entre paneles (m):",round(dist_pan,2))
 
 if __name__ == "__main__":
     app()
