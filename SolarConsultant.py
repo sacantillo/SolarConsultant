@@ -2,6 +2,7 @@ import streamlit as st
 import folium, math
 from streamlit_folium import st_folium
 from geopy.geocoders import Nominatim
+import googlemaps
 import datetime
 from pynasapower.get_data import query_power
 from pynasapower.geometry import point, bbox
@@ -25,10 +26,10 @@ def carga_inversores():
     return inversores
 
 def geocode_address(address):
-    geolocator = Nominatim(user_agent="my_app")
-    location = geolocator.geocode(address)
+    gmaps = googlemaps.Client(key='AIzaSyCjVcWDA9GiTKTahvqItt6SiUrUdCHAuKM')
+    location = gmaps.geocode(address)
     if location:
-        return location.point.latitude, location.point.longitude
+        return location[0]['geometry']['location']['lat'], location[0]['geometry']['location']['lng']
     else:
         return None, None
 
