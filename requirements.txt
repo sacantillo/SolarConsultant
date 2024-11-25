@@ -8,3 +8,4 @@ streamlit_folium
 datetime
 geopy
 pynasapower
+googlemaps
