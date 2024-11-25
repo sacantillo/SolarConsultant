@@ -118,7 +118,7 @@ def app():
     if not st.session_state.consumos_df.empty:
       cons_prom = consumo_diario(st.session_state.consumos_df)
       with c1:
-        st.metric("Consumo diario (kWh):", round(cons_prom,2))
+        st.metric("Consumo diario (kWh):", round(cons_prom,1))
     else:
       cons_prom = 0
     inyeccion = st.sidebar.slider('Inyección a la red (%)', 0, 100, 100)/100
